@@ -1,7 +1,7 @@
 ---
 name: product-video
 description: Make a short motion-graphics product video (under 30 seconds, Instagram- and website-ready MP4) from real footage of the user's own app — an iOS app in the Simulator, a website, or a browser extension — seeded with fixture data and styled only with the repo's own brand. Use this whenever the user asks for a product video, promo, motion graphics, a "what's new" or release video, a feature highlight reel, an Instagram post/Reel/Story video of the app, a video for the website or App Store, or says things like "make a video showing the latest updates", "show off the new features", "film the app", even if they don't say "motion graphics". Also use it for the caption that goes with such a video. In a repo with several applications it first works out which one the video is for.
-user-invokable: true
+user-invocable: true
 ---
 
 # Product video
@@ -25,7 +25,7 @@ The kit is in this skill's `assets/kit/` and is used in place — do not copy th
 | `render.mjs` | Composition → MP4, single stills, or a live preview URL |
 | `lib/motion.js` | Easing, springs, keyframe tracks, word reveals |
 
-If the repo keeps its own copy of this skill (for example under a content or marketing app), use that copy's kit, and read any video README beside the repo's existing compositions: it records what was learned last time.
+If the repo keeps its own copy of this skill (for example in a marketing or content folder), use that copy's kit, and read any video README beside the repo's existing compositions: it records what was learned last time.
 
 ## 1. Which application?
 

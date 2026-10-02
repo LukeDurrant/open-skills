@@ -18,13 +18,13 @@ Add one UI test class (for example `VideoShots`) to the existing UI test target,
 
 ```swift
 func test_02_search() throws {
-    let app = launch(fixture: "pricedWeek")          // the repo's own flags
+    let app = launch(fixture: "sampleData")          // the repo's own flags
     let search = app.textFields["search.field"]
     for _ in 0..<12 where !(search.exists && search.isHittable) { app.swipeUp(velocity: 1800) }
     pause(1.5)                                       // a settled state to hold on
     search.tap()
     pause(0.8)
-    for character in "milk" {                        // type at a human pace
+    for character in "note" {                        // type at a human pace
         search.typeText(String(character))
         pause(0.12)
     }

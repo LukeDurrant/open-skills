@@ -16,8 +16,8 @@ Keep the total under 30 seconds. Four features at about 4.5 s each lands near 23
 
 ## Copy
 
-- **Headlines** say what the user can now do, in their words: "Tick it off in store", not "In-store mode with persistent state". Sentence case. Wrap exactly one phrase in `<b>` for the accent colour — the part that is new.
-- **Chips** name the thing on screen ("Search any product", "Added to your shop"). Keep them under about 24 characters. They do not repeat prices or numbers from the footage, and they must not cover the element they describe: place them beside it.
+- **Headlines** say what the user can now do, in their words: "Pick up where you left off", not "Persistent session state restoration". Sentence case. Wrap exactly one phrase in `<b>` for the accent colour — the part that is new.
+- **Chips** name the thing on screen ("Search everything", "Saved to your list"). Keep them under about 24 characters. They do not repeat prices or numbers from the footage, and they must not cover the element they describe: place them beside it.
 - **Only true things.** Every claim must be visible in the footage or stated in the repo's own release notes. No "fastest", "smartest", "#1".
 - Follow the repo's content rules (tone, banned words, emoji policy, how other companies' names may appear).
 
@@ -35,9 +35,9 @@ Example, from a clip where typing runs 56–128 and the tap lands at 240:
 
 ```js
 { clip: "other", count: 330, length: 4.0, beat: 1.7,
-  headline: "Add <b>everything else</b> you buy",
+  headline: "Add <b>anything</b> to your list",
   frames: [[0, 10], [0.8, 50], [1.6, 130], [2.4, 225], [3.0, 262], [4.0, 300]],
-  chips: [{ text: "Search any product", at: 2.5, y: 880 }, { text: "Added to your shop", at: 3.0, y: 1016 }] }
+  chips: [{ text: "Search everything", at: 2.5, y: 880 }, { text: "Saved to your list", at: 3.0, y: 1016 }] }
 ```
 
 ## Layout

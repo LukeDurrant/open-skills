@@ -16,7 +16,7 @@ export default [
       await pause(1.5);
       await scroll(700, 1.4);
       await pause(1.5);
-      // await type(page.getByRole("searchbox"), "milk");
+      // await type(page.getByRole("searchbox"), "note");
       // await page.getByRole("button", { name: "Add" }).first().click();
       // await pause(2);
     },

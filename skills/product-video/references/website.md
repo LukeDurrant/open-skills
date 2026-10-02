@@ -9,7 +9,7 @@ The footage is Chromium's own screencast of the site while a shots file drives i
 - **Never type real credentials.** If only a real account will do, run with `--profile <dir> --headed`, let the user sign in themselves in the window that opens, and keep that profile directory out of Git.
 - **A repo-provided local login helper** (a script that mints a single-use sign-in link for a synthetic dev user) is the best case: redeem the link once in a persistent profile (`chromium.launchPersistentContext(profile)` → `page.goto(link)`), then run every shot with `--profile <dir>`. Copy the whole link — a base64url nonce can contain `-` and `_` — and never read or store the session token itself; the browser profile holds it.
 
-Look for a page built to show the product with representative data (a public preview week, a demo basket, a sample report). That is the web equivalent of a screenshot fixture.
+Look for a page built to show the product with representative data (a public demo, a sample project, a sample report). That is the web equivalent of a screenshot fixture.
 
 ## 2. Choose the viewport
 
@@ -32,8 +32,8 @@ export default [
     viewport: { width: 402, height: 874, deviceScaleFactor: 3, isMobile: true },
     async run(page, { pause, scroll, type }) {
       await pause(1.5);                                   // settled state to hold on
-      await type(page.getByRole("searchbox"), "milk");   // human-paced typing
-      await page.getByText("Fresh Milk").first().waitFor();
+      await type(page.getByRole("searchbox"), "note");   // human-paced typing
+      await page.getByText("Meeting note").first().waitFor();
       await pause(1.5);
       await scroll(500, 1.2);                             // eased scroll, in seconds
       await pause(2);
