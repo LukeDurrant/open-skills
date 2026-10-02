@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Product video</title>
+<!--
+  Product video template. Copy this folder into the repo as the new video's
+  folder, then fill in the three marked blocks: BRAND (CSS), VIDEO and SCENES
+  (script). render.mjs serves the kit at /__kit/, so the folder can live
+  anywhere in the repo.
+
+  The page is a pure function of time: render.mjs calls
+  window.composition.renderFrame(seconds) for every frame and screenshots it.
+  Do not add CSS animations, transitions, timers or Date.now() — they would
+  make frames depend on the machine instead of on `seconds`.
+
+  Structure: intro (logo, title, kicker) → one scene per feature → outro
+  (logo, title, byline, tagline, call to action). A scene has two beats:
+  A. headline over the device, B. the headline leaves, the device moves up
+  and callout chips name what is on screen.
+-->
+<style>
+  /* ── BRAND: replace every value with the repo's own design tokens. ─────
+     Find them in the design system (tokens file, Tailwind config, theme).
+     If the repo has font files, point @font-face at them by relative path. */
+  /* @font-face { font-family: "Brand"; font-weight: 800; src: url("../../path/to/Font-800.ttf"); } */
+  :root {
+    --font: "Inter", system-ui, -apple-system, sans-serif;
+    --weight-display: 800;      /* headlines and the title */
+    --weight-strong: 700;       /* chips, pills */
+    --weight-body: 500;
+    --surface: #f5f5f4;         /* page ground */
+    --surface-raised: #ffffff;  /* chips, pills */
+    --ink: #111827;             /* text, device body, primary pill */
+    --ink-muted: #6b7280;
+    --line: #e5e7eb;            /* progress track */
+    --accent: #2563eb;          /* the accent phrase in a headline */
+    --glow: rgba(37, 99, 235, 0.12); /* the soft disc behind the content; use "transparent" for none */
+    --on-ink: #ffffff;
+  }
+  /* ── end BRAND ───────────────────────────────────────────────────────── */
+
+  * { box-sizing: border-box; margin: 0; }
+  html, body { overflow: hidden; background: var(--surface); }
+  body { font-family: var(--font); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  #stage { position: relative; overflow: hidden; perspective: 2600px; }
+  #stage > * { position: absolute; left: 0; top: 0; will-change: transform; }
+
+  #glow { width: 1000px; height: 1000px; border-radius: 50%; background: var(--glow); }
+  #logo { width: 512px; height: 512px; transform-origin: 0 0; object-fit: contain; }
+  #title-small { font-weight: var(--weight-display); font-size: 32px; letter-spacing: -0.6px; white-space: nowrap; }
+  #kicker {
+    background: var(--surface-raised); border-radius: 999px; padding: 10px 22px;
+    font-weight: var(--weight-strong); font-size: 22px; white-space: nowrap; transform-origin: 100% 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  }
+  #progress { display: flex; gap: 8px; }
+  #progress i { flex: 1; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  #progress b { display: block; height: 100%; background: var(--ink); border-radius: 3px; transform-origin: 0 50%; }
+
+  .display { font-weight: var(--weight-display); letter-spacing: -0.036em; line-height: 1; text-wrap: balance; }
+  .display b { font-weight: inherit; color: var(--accent); }
+  .word-mask { display: inline-block; overflow: hidden; vertical-align: top; padding: 0.06em 0.05em 0.16em 0.02em; margin: -0.06em -0.05em -0.16em -0.02em; }
+  .word { display: inline-block; transform-origin: 0 100%; will-change: transform; }
+  .headline { font-size: 96px; }
+  #title-big { text-align: center; font-size: 124px; }
+  #byline { text-align: center; font-weight: var(--weight-strong); font-size: 44px; letter-spacing: -0.8px; }
+  #tagline { text-align: center; font-weight: var(--weight-body); font-size: 36px; color: var(--ink-muted); }
+  #cta {
+    background: var(--ink); color: var(--on-ink); border-radius: 999px; padding: 22px 44px;
+    font-weight: var(--weight-strong); font-size: 36px; letter-spacing: -0.4px; white-space: nowrap;
+  }
+
+  #device { background: var(--ink); transform-origin: 50% 0; box-shadow: 0 44px 90px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.06); }
+  #device .bar { display: flex; align-items: center; gap: 8px; padding-left: 8px; }
+  #device .bar i { width: 12px; height: 12px; border-radius: 50%; background: var(--ink-muted); }
+  #screen { display: block; background: var(--surface); }
+
+  .chip {
+    display: flex; align-items: center; gap: 14px; background: var(--surface-raised);
+    border-radius: 999px; padding: 22px 34px 22px 26px; font-weight: var(--weight-strong); font-size: 34px;
+    letter-spacing: -0.4px; white-space: nowrap; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  }
+  .chip::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--ink); flex: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+  <!-- headlines, the device and chips are created from SCENES -->
+  <div class="display" id="title-big"></div>
+  <div id="byline"></div>
+  <div id="tagline"></div>
+  <div id="cta"></div>
+  <div id="progress"></div>
+  <div id="title-small"></div>
+  <div id="kicker"></div>
+  <img id="logo" alt="">
+</div>
+
+<script type="module">
+import { clamp, prog, ease, spring, track, splitWords } from "/__kit/lib/motion.js";
+
+// ── VIDEO: what the video is and where it goes ─────────────────────────
+const VIDEO = {
+  width: 1080,
+  height: 1350,            // 1350 = 4:5 (Instagram post, website). 1920 = 9:16 (Reels, Stories).
+  safeTop: 0,              // 9:16 for Stories/Reels: about 220, to clear the app's own chrome
+  fps: 30,
+  title: "Product name",   // the name the user asked for, exactly
+  kicker: "What's new",    // the pill beside the title
+  byline: "",              // outro line under the title, e.g. "by Company". "" hides it
+  tagline: "",             // outro supporting line: use real marketing copy from the repo, or ""
+  cta: "example.com",      // outro pill: where to go. Only something that exists today
+  logo: "logo.svg",        // the repo's real logo, relative to this file (copy or relative path)
+  frame: "phone",          // "phone" for portrait footage, "browser" for landscape web footage
+  footage: { width: 804, height: 1748 }, // pixel size of the footage frames
+};
+
+// ── SCENES: one per feature, in the order they play ────────────────────
+// clip      folder under footage/ holding 0001.jpg … (see footage.sh, capture-web.mjs)
+// count     number of frames in that folder
+// length    seconds on screen. 4–5.5 works; the whole video should stay under 30 s
+// headline  plain words; wrap ONE phrase in <b> for the accent colour
+// beat      seconds into the scene when the headline leaves and the device moves up.
+//           Give a headline at least 1.5 s to be read after it has finished arriving
+// frames    [[scene seconds, footage frame], …] — the edit. Hold on a state, then play the
+//           gesture at close to real speed; skip dead time by jumping frame numbers
+// chips     callouts for beat B: { text, at: scene seconds, y: pixels from the top }
+// pose      optional { y, scale } for the device in beat B, when the action is low on the screen
+const SCENES = [
+  {
+    clip: "first", count: 300, length: 5.0, beat: 2.4,
+    headline: "Say what it does, <b>in the user's words</b>",
+    frames: [[0, 1], [2.4, 90], [5.0, 300]],
+    chips: [{ text: "Name the thing on screen", at: 3.3, y: 640 }, { text: "One more, if it helps", at: 4.0, y: 776 }],
+  },
+];
+
+// ── Engine: timings and layout derived from the config above ───────────
+const { width: W, height: H } = VIDEO;
+const TOP = VIDEO.safeTop;
+const INTRO = 2.5;
+const OUTRO = 3.0;
+const lin = ease.linear;
+let cursor = INTRO;
+for (const scene of SCENES) {
+  scene.start = cursor;
+  cursor += scene.length;
+}
+const OUT = cursor; // outro starts
+const DURATION = OUT + OUTRO;
+const $ = (selector) => document.querySelector(selector);
+const stage = $("#stage");
+for (const el of [document.documentElement, document.body, stage]) {
+  el.style.width = `${W}px`;
+  el.style.height = `${H}px`;
+}
+stage.style.perspectiveOrigin = `${W / 2}px ${H * 0.46}px`;
+
+// Device geometry
+const phone = VIDEO.frame === "phone";
+const SCREEN_W = phone ? 600 : 940;
+const SCREEN_H = Math.round((SCREEN_W * VIDEO.footage.height) / VIDEO.footage.width);
+const PAD = phone ? 14 : 10;
+const BAR = phone ? 0 : 38;
+const device = document.createElement("div");
+device.id = "device";
+device.style.cssText = `width:${SCREEN_W + PAD * 2}px;padding:${PAD}px;border-radius:${phone ? 104 : 22}px`;
+device.innerHTML =
+  (phone ? "" : `<div class="bar" style="height:${BAR}px"><i></i><i></i><i></i></div>`) +
+  `<canvas id="screen" width="${VIDEO.footage.width}" height="${VIDEO.footage.height}" style="width:${SCREEN_W}px;height:${SCREEN_H}px;border-radius:${phone ? 90 : 12}px"></canvas>`;
+stage.insertBefore(device, $("#title-big"));
+const screen = $("#screen").getContext("2d");
+const DEVICE_W = SCREEN_W + PAD * 2;
+
+// Text
+$("#logo").src = VIDEO.logo;
+$("#title-big").textContent = VIDEO.title;
+$("#title-small").textContent = VIDEO.title;
+$("#kicker").textContent = VIDEO.kicker;
+$("#byline").textContent = VIDEO.byline;
+$("#tagline").textContent = VIDEO.tagline;
+$("#cta").textContent = VIDEO.cta;
+for (const id of ["#title-big", "#byline", "#tagline"]) $(id).style.width = `${W}px`;
+$("#progress").style.cssText = `left:56px;top:${TOP + 132}px;width:${W - 112}px`;
+$("#progress").innerHTML = SCENES.map(() => "<i><b></b></i>").join("");
+const segments = [...document.querySelectorAll("#progress b")];
+const titleWords = splitWords($("#title-big"));
+
+// Device poses: [centre x, top y, rotateY, rotateX, rotateZ, scale]. Scenes
+// alternate sides; between scenes the device turns edge-on and the footage
+// changes behind the turn.
+const cx = W / 2;
+const yA = TOP + (phone ? 452 : 470);
+const A = (ry) => [cx, yA, phone ? ry : ry / 2, phone ? 6 : 4, phone ? (ry > 0 ? -2 : 2) : 0, 1];
+const B = (d, ry, pose = {}) =>
+  phone
+    ? [cx - 148 * d, pose.y ?? TOP + 178, ry, 3, ry > 0 ? -1.5 : 1.5, pose.scale ?? 1.1]
+    : [cx, pose.y ?? TOP + 190, ry / 2, 2, 0, pose.scale ?? 1.08];
+const TURN = (ry) => [cx, yA - 150, ry, 4, 0, 1];
+const DEVICE = [];
+const GLOW = [[0, [cx, TOP + 560, 0.2]], [1.2, [cx, TOP + 560, 0.95], ease.outQuint], [INTRO - 0.2, [cx, TOP + 560, 0.95]]];
+const headlines = [];
+const chips = [];
+SCENES.forEach((scene, i) => {
+  const d = i % 2 === 0 ? 1 : -1;
+  const S = scene.start;
+  const E = S + scene.length;
+  const last = i === SCENES.length - 1;
+  if (i === 0) DEVICE.push([S - 0.05, [cx, H + 150, 0, 40, -6, 0.9]], [S + 0.85, A(-12 * d), ease.outQuint]);
+  else DEVICE.push([S + 0.001, TURN(90 * d), lin], [S + 0.55, A(-12 * d), ease.outQuint]);
+  DEVICE.push([S + scene.beat, A(-7 * d), lin], [S + scene.beat + 0.7, B(d, 12 * d, scene.pose)], [E - 0.3, B(d, 9 * d, scene.pose), lin]);
+  DEVICE.push(last ? [E + 0.45, [cx, H + 210, 0, 36, 6, 0.9], ease.inCubic] : [E, TURN(90 * d), ease.inCubic]);
+
+  const corner = d > 0 ? [W - 70, TOP + 90] : [70, TOP + 120];
+  const side = d > 0 ? [W - 120, TOP + 760] : [130, TOP + 800];
+  GLOW.push([S + 0.6, [...corner, 1], i === 0 ? ease.inOutQuint : undefined], [S + scene.beat, [...corner, 1]], [S + scene.beat + 0.8, [...side, 0.9]], [E - 0.1, [...side, 0.9]]);
+
+  const headline = document.createElement("div");
+  headline.className = "display headline";
+  headline.innerHTML = scene.headline;
+  headline.style.cssText = `left:56px;top:${TOP + 176}px;width:${W - 112}px`;
+  stage.insertBefore(headline, device);
+  headlines.push({ el: headline, words: splitWords(headline), tIn: S + (i === 0 ? 0.25 : 0.3), tOut: S + scene.beat });
+
+  for (const chip of scene.chips ?? []) {
+    const el = document.createElement("div");
+    el.className = "chip";
+    el.textContent = chip.text;
+    stage.insertBefore(el, $("#title-big"));
+    chips.push({ el, side: chip.side ?? (d > 0 ? "right" : "left"), y: TOP + chip.y, tIn: S + chip.at, tOut: E - 0.25 });
+  }
+  scene.track = scene.frames.map(([at, frame], k) => (k === 0 ? [S + at, frame] : [S + at, frame, lin]));
+});
+GLOW.push([OUT + 0.7, [cx, TOP + 500, 1.15], ease.inOutQuint]);
+
+// Logo [centre x, centre y, size] and kicker [right edge x, top y, scale]
+const LOGO = [
+  [0, [cx, TOP + 500, 300]], [INTRO - 0.25, [cx, TOP + 500, 300]],
+  [INTRO + 0.45, [84, TOP + 80, 56], ease.inOutQuint], [OUT - 0.1, [84, TOP + 80, 56]],
+  [OUT + 0.7, [cx, TOP + 430, 232], ease.inOutQuint],
+];
+const KICKER = [[0, [cx + 150, TOP + 880, 1.9]], [INTRO - 0.25, [cx + 150, TOP + 880, 1.9]], [INTRO + 0.45, [W - 56, TOP + 56, 1], ease.inOutQuint]];
+
+// Footage frames are decoded once and kept briefly; renderFrame awaits them.
+const cache = new Map();
+function footage(name, index) {
+  const key = `${name}/${String(index).padStart(4, "0")}`;
+  if (!cache.has(key)) {
+    const image = new Image();
+    image.src = `footage/${key}.jpg`;
+    cache.set(key, image.decode().then(() => image));
+    if (cache.size > 90) cache.delete(cache.keys().next().value);
+  }
+  return cache.get(key);
+}
+
+function revealWords(words, t, tIn, tOut, stagger = 0.05) {
+  words.forEach((word, i) => {
+    const pin = ease.outQuint(prog(t, tIn + i * stagger, 0.55));
+    const pout = ease.inCubic(prog(t, tOut + i * 0.03, 0.32));
+    word.style.transform = `translateY(${(1 - pin) * 115 - pout * 125}%) rotate(${(1 - pin) * 7}deg)`;
+  });
+}
+
+async function renderFrame(t) {
+  const [gx, gy, gs] = track(t, GLOW);
+  $("#glow").style.transform = `translate(${gx - 500}px, ${gy - 500}px) scale(${gs})`;
+
+  // Logo: springs in, rides to the header for the scenes, returns for the outro.
+  const [lx, ly, size] = track(t, LOGO);
+  const pop = spring(t - 0.1, { freq: 2.3, damping: 0.6 });
+  const turn = (1 - ease.outExpo(prog(t, 0.1, 0.8))) * -100;
+  $("#logo").style.transform = `translate(${lx}px, ${ly}px) rotate(${turn}deg) scale(${(size / 512) * pop}) translate(-256px, -256px)`;
+  $("#logo").style.opacity = t < 0.1 ? 0 : 1;
+
+  const outro = t >= OUT - 0.1;
+  $("#title-big").style.transform = `translate(0px, ${TOP + (outro ? 600 : 700)}px)`;
+  revealWords(titleWords, t, outro ? OUT + 0.65 : 1.2, outro ? 1e9 : INTRO - 0.25, 0.09);
+  const small = ease.outQuint(prog(t, INTRO + 0.3, 0.5)) * (1 - ease.inCubic(prog(t, OUT - 0.2, 0.3)));
+  $("#title-small").style.transform = `translate(${128 + (1 - small) * -24}px, ${TOP + 61}px)`;
+  $("#title-small").style.opacity = small;
+
+  const [kx, ky, ks] = track(t, KICKER);
+  const kPop = spring(t - 1.55, { freq: 2.6, damping: 0.55 });
+  const kOut = 1 - ease.inCubic(prog(t, OUT - 0.2, 0.3));
+  $("#kicker").style.transform = `translate(${kx}px, ${ky}px) translate(-100%, 0) scale(${ks * kPop * kOut})`;
+  $("#kicker").style.opacity = t < 1.55 || !VIDEO.kicker ? 0 : kOut;
+
+  $("#progress").style.opacity = ease.outCubic(prog(t, INTRO + 0.3, 0.4)) * (1 - prog(t, OUT - 0.3, 0.3));
+  segments.forEach((segment, i) => {
+    segment.style.transform = `scaleX(${prog(t, SCENES[i].start, SCENES[i].length)})`;
+  });
+
+  for (const { el, words, tIn, tOut } of headlines) {
+    el.style.visibility = t >= tIn - 0.05 && t <= tOut + 0.7 ? "visible" : "hidden";
+    revealWords(words, t, tIn, tOut);
+  }
+
+  const [x, y, ry, rx, rz, s] = track(t, DEVICE);
+  device.style.visibility = t >= INTRO - 0.05 && t < OUT + 0.45 ? "visible" : "hidden";
+  device.style.transform = `translate(${x - DEVICE_W / 2}px, ${y}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s})`;
+  const scene = SCENES.find((item, i) => t < item.start + item.length || i === SCENES.length - 1);
+  if (t >= INTRO - 0.1 && t < OUT + 0.5) {
+    const index = clamp(Math.round(track(t, scene.track)), 1, scene.count);
+    screen.drawImage(await footage(scene.clip, index), 0, 0, VIDEO.footage.width, VIDEO.footage.height);
+  }
+
+  for (const { el, side, y: cy, tIn, tOut } of chips) {
+    const pin = spring(t - tIn, { freq: 3, damping: 0.62 });
+    const pout = ease.inCubic(prog(t, tOut, 0.22));
+    const from = side === "left" ? -1 : 1;
+    el.style.opacity = prog(t, tIn, 0.1) * (1 - pout);
+    el.style.transformOrigin = side === "left" ? "0 50%" : "100% 50%";
+    el.style.transform =
+      (side === "left" ? `translate(56px, ${cy}px)` : `translate(${W - 56}px, ${cy}px) translate(-100%, 0)`) +
+      ` translate(${(1 - pin) * 70 * from}px, 0) rotate(${(1 - pin) * 5 * from}deg) scale(${(0.7 + 0.3 * pin) * (1 - pout * 0.3)})`;
+  }
+
+  // Outro: byline, tagline and call to action stack under the title.
+  let row = TOP + 748;
+  for (const [id, at, step] of [["#byline", OUT + 1.0, 90], ["#tagline", OUT + 1.25, 122]]) {
+    const el = $(id);
+    const p = ease.outQuint(prog(t, at, 0.5));
+    el.style.opacity = el.textContent ? p : 0;
+    el.style.transform = `translate(0px, ${row + (1 - p) * 30}px)`;
+    if (el.textContent) row += step;
+  }
+  const cta = spring(t - (OUT + 1.55), { freq: 2.6, damping: 0.55 });
+  $("#cta").style.opacity = VIDEO.cta ? prog(t, OUT + 1.55, 0.1) : 0;
+  $("#cta").style.transform = `translate(${cx}px, ${row}px) translate(-50%, 0) scale(${0.6 + 0.4 * cta})`;
+}
+
+await document.fonts.ready;
+await $("#logo").decode().catch(() => console.error(`Logo not found: ${VIDEO.logo}`));
+window.composition = { width: W, height: H, fps: VIDEO.fps, duration: DURATION, renderFrame, ready: true };
+// `render.mjs <dir> --serve` prints a URL for a browser: it plays in a loop,
+// and ?t=<seconds> shows one frame. A render passes ?render=1.
+const query = new URLSearchParams(location.search);
+if (query.has("t")) renderFrame(+query.get("t"));
+else if (!query.has("render")) {
+  const started = performance.now();
+  const tick = async () => {
+    await renderFrame(((performance.now() - started) / 1000) % DURATION);
+    requestAnimationFrame(tick);
+  };
+  tick();
+}
+</script>
+</body>
+</html>
