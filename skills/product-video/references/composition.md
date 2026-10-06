@@ -2,7 +2,7 @@
 
 The template gives you an intro, one scene per feature and an outro. This file is about filling it well.
 
-## Shape and pacing
+## Shape and pacing (product focus)
 
 | Part | Length | What happens |
 | --- | --- | --- |
@@ -16,7 +16,7 @@ Keep the total under 30 seconds. Four features at about 4.5 s each lands near 23
 
 ## Copy
 
-- **Headlines** say what the user can now do, in their words: "Pick up where you left off", not "Persistent session state restoration". Sentence case. Wrap exactly one phrase in `<b>` for the accent colour — the part that is new.
+- **Headlines** say what the user can now do, in their words: "Tick it off as you go", not "In-store mode with persistent state". Sentence case. Wrap exactly one phrase in `<b>` for the accent colour — the part that is new.
 - **Chips** name the thing on screen ("Search everything", "Saved to your list"). Keep them under about 24 characters. They do not repeat prices or numbers from the footage, and they must not cover the element they describe: place them beside it.
 - **Only true things.** Every claim must be visible in the footage or stated in the repo's own release notes. No "fastest", "smartest", "#1".
 - Follow the repo's content rules (tone, banned words, emoji policy, how other companies' names may appear).
@@ -45,6 +45,24 @@ Example, from a clip where typing runs 56–128 and the tap lands at 240:
 - Canvas coordinates are pixels on a 1080-wide stage. Chip `y` is from the top; chips sit on the side away from the device (the template alternates sides per scene) and may overlap the device's edge.
 - If the action is in the lower third of the screen (a bottom sheet, a keyboard), give the scene `pose: { y: 166, scale: 0.9 }` so the whole device is visible in beat B.
 - For 9:16, set `height: 1920` and `safeTop: 220`, and keep chips above about `y = 1400` so the platform's own buttons do not cover them.
+
+## Marketing
+
+A marketing video uses the same template with fewer, longer, more finished scenes. The pacing table above is for product videos; for marketing use this one:
+
+| Part | Length | What happens |
+| --- | --- | --- |
+| Intro | 2–3 s | A designed open: the logo built from its parts, or a single line of copy that sets up the problem |
+| Hero scene × 1–2 (3 at most) | 5–7 s each | One idea. Headline lands, then the device carries the action in a single unhurried take; at most one chip, or none |
+| Optional device-free beat | 2–3 s | The outcome as a graphic: a number, a before/after, a line of copy alone on brand colour |
+| Outro | 3 s | Logo, one-line promise, call to action |
+
+- **Copy is the outcome, not the feature.** "Never lose a thought", not "Shared notes". Five words or fewer for headlines; the footage explains the how.
+- **Hold longer, cut less.** Let the payoff sit for a full second before anything else moves. Fewer device turns: one turn per scene, or a continuous take across two moments of the same clip.
+- **Chips are optional.** Use one only if the screen is unclear without it, and make it feel like part of the design (the design system's pill or badge, placed with care), not a label.
+- **More craft per second**: the inline-SVG logo build, a subtle push-in on the device during the payoff (scale 1 → 1.04 over the hold), staggered word reveals on every headline, and a device-free beat where it helps. Everything below in "Going beyond the template" is expected here, not optional.
+- **Fixture data must look like a real, appealing product**: believable names and items, good imagery, a full but uncluttered screen. Empty states, placeholder text or "Test merchant" are reshoots.
+- **Review every half second** of the render, not one or two moments per scene, and fix anything that would not work as a poster.
 
 ## Going beyond the template
 

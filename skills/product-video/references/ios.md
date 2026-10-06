@@ -44,7 +44,7 @@ func test_02_search() throws {
 
 ```sh
 <kit>/capture-ios.sh --project App.xcodeproj --scheme <scheme> \
-  --tests "<UITestTarget>/VideoShots" --out <scratch>/shots test_01_plan test_02_search
+  --tests "<UITestTarget>/VideoShots" --out <video-dir>/out/raw test_01_plan test_02_search
 ```
 
 It boots the simulator, sets a clean status bar, builds once, and records one `.mov` per shot. If the repo already has its own capture script for video shots, use that instead.
@@ -57,8 +57,8 @@ It boots the simulator, sets a clean status bar, builds once, and records one `.
 ## 4. Cut
 
 ```sh
-<kit>/footage.sh sheet <scratch>/shots/test_02_search.mov sheet.jpg     # numbers are seconds
-<kit>/footage.sh cut   <scratch>/shots/test_02_search.mov <video-dir>/footage/search 20.0 11.0
+<kit>/footage.sh sheet <video-dir>/out/raw/test_02_search.mov sheet.jpg     # numbers are seconds
+<kit>/footage.sh cut   <video-dir>/out/raw/test_02_search.mov <video-dir>/footage/search 20.0 11.0
 <kit>/footage.sh sheet <video-dir>/footage/search sheet2.jpg            # numbers × 8 = frame
 ```
 
